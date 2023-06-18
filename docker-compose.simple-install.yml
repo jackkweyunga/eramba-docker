@@ -65,10 +65,10 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`eramba.site.atomatiki.tech`)"
-      - "traefik.http.routers.portainer.entrypoints=websecure"
-      - "traefik.http.services.portainer.loadbalancer.server.port=80"
-      - "traefik.http.routers.portainer.tls.certresolver=production"
+      - "traefik.http.routers.eramba.rule=Host(`eramba.site.atomatiki.tech`)"
+      - "traefik.http.routers.eramba.entrypoints=websecure"
+      - "traefik.http.services.eramba.loadbalancer.server.port=80"
+      - "traefik.http.routers.eramba.tls.certresolver=production"
 
   cron:
     container_name: cron
