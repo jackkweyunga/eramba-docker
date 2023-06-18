@@ -14,16 +14,24 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - traefik_network
+
   redis:
     container_name: redis
     image: redis:6.0.16-alpine
     restart: always
+    networks:
+      - traefik_network
+
   eramba:
     container_name: eramba
     image: ghcr.io/eramba/eramba:latest
     restart: always
-    ports:
-      - 8443:443
+    networks:
+      - traefik_network
+    expose:
+      - 80
     volumes:
       - data:/var/www/eramba/app/upgrade/data
       - app:/var/www/eramba
@@ -31,7 +39,8 @@ services:
       - ./apache/ssl/mycert.crt:/etc/ssl/certs/mycert.crt
       - ./apache/ssl/mycert.key:/etc/ssl/private/mycert.key
       - ./apache/security.conf:/etc/apache2/conf-available/security.conf
-      - ./apache/vhost-ssl.conf:/etc/apache2/sites-available/000-default.conf
+      # - ./apache/vhost-ssl.conf:/etc/apache2/sites-available/000-default.conf
+      - ./apache/vhost.conf:/etc/apache2/sites-available/000-default.conf
       - ./crontab/crontab:/etc/cron.d/eramba-crontab
     environment:
       DB_HOST: ${DB_HOST}
@@ -53,12 +62,22 @@ services:
       - redis
     depends_on:
       - mysql
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`eramba.site.atomatiki.tech`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.services.portainer.loadbalancer.server.port=80"
+      - "traefik.http.routers.portainer.tls.certresolver=production"
+
   cron:
     container_name: cron
     image: ghcr.io/eramba/eramba:latest
     command: ["cron", "-f"]
     entrypoint: ["/docker-cron-entrypoint.sh"]
     restart: always
+    networks:
+      - traefik_network
     volumes:
       - data:/var/www/eramba/app/upgrade/data
       - app:/var/www/eramba
@@ -87,8 +106,13 @@ services:
       - eramba
     depends_on:
       - eramba
+
 volumes:
   app:
   data:
   logs:
   db-data:
+
+networks:
+  traefik_network:
+    external: true
